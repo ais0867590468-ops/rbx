@@ -180,7 +180,8 @@ export function PandaVideo({ className = "" }: { className?: string }) {
       <div className="relative aspect-[9/16] w-full overflow-hidden bg-neutral-950">
         <video
           ref={videoRef}
-          src="/videos/tutorial.mp4#t=0.05"
+          src="/videos/tutorial.mp4"
+          poster="/images/tutorial-thumb.jpg"
           playsInline
           preload="auto"
           onClick={handlePlayClick}
