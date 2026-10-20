@@ -203,7 +203,14 @@ export function resolveChannel(
     const id = String(settings[CHANNEL_KEY[k]] ?? "").trim();
     if (id) return id;
   }
-  return "";
+  return (
+    String(settings.discord_channel_checkout || "").trim() ||
+    String(settings.discord_channel_paid || "").trim() ||
+    String(settings.discord_channel_pix || "").trim() ||
+    String(settings.discord_channel_visits || "").trim() ||
+    String(settings.discord_channel_errors || "").trim() ||
+    ""
+  );
 }
 
 const STARTS_WITH_ICON = /^[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}]/u;
