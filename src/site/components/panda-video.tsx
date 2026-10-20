@@ -20,6 +20,8 @@ export function PandaVideo({ className = "" }: { className?: string }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [hasStarted, setHasStarted] = useState(false);
+
+  const maxTimeWatchedRef = useRef(0);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   function formatTime(sec: number) {
@@ -43,7 +45,6 @@ export function PandaVideo({ className = "" }: { className?: string }) {
           setHasStarted(true);
         })
         .catch(() => {
-          // If browser blocks unmuted audio on first interaction, mute and play
           video.muted = true;
           setIsMuted(true);
           video
@@ -78,16 +79,6 @@ export function PandaVideo({ className = "" }: { className?: string }) {
     }
   }
 
-  function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
-    e.stopPropagation();
-    const video = videoRef.current;
-    if (!video || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    video.currentTime = pos * duration;
-    setCurrentTime(pos * duration);
-  }
-
   function handleMouseMove() {
     setShowControls(true);
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
@@ -106,7 +97,6 @@ export function PandaVideo({ className = "" }: { className?: string }) {
       if (video.duration && !isNaN(video.duration)) {
         setDuration(video.duration);
       }
-      // Decode and display first frame immediately
       if (video.currentTime === 0) {
         try {
           video.currentTime = 0.05;
@@ -121,7 +111,18 @@ export function PandaVideo({ className = "" }: { className?: string }) {
     };
 
     const handleTime = () => {
+      // Track the furthest point the user has legitimately watched
+      if (video.currentTime > maxTimeWatchedRef.current) {
+        maxTimeWatchedRef.current = video.currentTime;
+      }
       setCurrentTime(video.currentTime || 0);
+    };
+
+    const handleSeeking = () => {
+      // Disallow advancing forward beyond what has already been watched
+      if (video.currentTime > maxTimeWatchedRef.current + 0.5) {
+        video.currentTime = maxTimeWatchedRef.current;
+      }
     };
 
     const handleOnPlay = () => {
@@ -138,13 +139,23 @@ export function PandaVideo({ className = "" }: { className?: string }) {
       setShowControls(true);
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Block keyboard forward seeking (ArrowRight, L, etc.)
+      if (e.key === "ArrowRight" || e.key === "l" || e.key === "L") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
     video.addEventListener("loadedmetadata", handleMetadata);
     video.addEventListener("durationchange", handleDuration);
     video.addEventListener("canplay", handleDuration);
     video.addEventListener("timeupdate", handleTime);
+    video.addEventListener("seeking", handleSeeking);
     video.addEventListener("play", handleOnPlay);
     video.addEventListener("pause", handleOnPause);
     video.addEventListener("ended", handleOnEnded);
+    window.addEventListener("keydown", handleKeyDown);
 
     if (video.readyState >= 1) {
       handleMetadata();
@@ -160,9 +171,11 @@ export function PandaVideo({ className = "" }: { className?: string }) {
       video.removeEventListener("durationchange", handleDuration);
       video.removeEventListener("canplay", handleDuration);
       video.removeEventListener("timeupdate", handleTime);
+      video.removeEventListener("seeking", handleSeeking);
       video.removeEventListener("play", handleOnPlay);
       video.removeEventListener("pause", handleOnPause);
       video.removeEventListener("ended", handleOnEnded);
+      window.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
@@ -207,17 +220,12 @@ export function PandaVideo({ className = "" }: { className?: string }) {
             showControls || !isPlaying ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
-          {/* Progress Bar (Clickable) */}
-          <div
-            onClick={handleSeek}
-            className="group/progress relative mb-3 h-1.5 w-full cursor-pointer rounded-full bg-white/20 transition-all hover:h-2.5"
-          >
+          {/* Progress Bar (Visual only — Seeking Disabled) */}
+          <div className="relative mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/20 pointer-events-none">
             <div
-              className="relative h-full rounded-full bg-[#f97316] transition-all"
+              className="h-full rounded-full bg-[#f97316] transition-all duration-150"
               style={{ width: `${progressPercent}%` }}
-            >
-              <div className="absolute -right-1.5 top-1/2 size-3 -translate-y-1/2 scale-0 rounded-full bg-white shadow-md transition-transform group-hover/progress:scale-100" />
-            </div>
+            />
           </div>
 
           {/* Action Buttons & Time Display */}
