@@ -177,70 +177,14 @@ export function CheckoutForm({ product }: { product: Product }) {
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Forma de pagamento</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <button
-            type="button"
-            onClick={() => chooseMethod("pix")}
-            className={cn(
-              "flex min-h-20 items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors",
-              method === "pix" ? "border-accent bg-accent/10" : "border-line bg-surface",
-            )}
-          >
-            <PixMark className="size-8" />
-            <span>
-              <span className="block text-sm font-semibold">PIX</span>
-              <span className="block text-xs text-muted">QR Code na hora · recomendado</span>
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => chooseMethod("card")}
-            className={cn(
-              "flex min-h-20 items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors",
-              method === "card" ? "border-accent bg-accent/10" : "border-line bg-surface",
-            )}
-          >
-            <CardMark />
-            <span>
-              <span className="block text-sm font-semibold">Cartão</span>
-              <span className="block text-xs text-muted">Visa, Mastercard ou Elo</span>
-            </span>
-          </button>
+        <div className="flex items-center gap-3 rounded-xl border border-accent bg-accent/10 p-4">
+          <PixMark className="size-8 text-accent" />
+          <div>
+            <p className="text-sm font-semibold text-fg">Pagamento instantâneo via PIX</p>
+            <p className="text-xs text-muted">Aprovação imediata · QR Code e Copia e Cola gerados na hora.</p>
+          </div>
         </div>
       </fieldset>
-
-      {method === "card" ? (
-        <div className="space-y-3 rounded-xl border border-line bg-surface p-4 fillet">
-          <div className="overflow-hidden rounded-xl bg-ink p-5 text-accent-fg fillet">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/20 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                Checkout Seguro Stripe
-              </span>
-              <CardMark />
-            </div>
-            <p className="mt-4 font-display text-lg font-semibold tracking-wide text-white">
-              Cartão de Crédito
-            </p>
-            <p className="mt-1 text-xs text-accent-fg/80 leading-relaxed">
-              Visa, Mastercard, Elo, Hipercard e American Express. Criptografia de ponta a ponta e liberação imediata após aprovação.
-            </p>
-          </div>
-          <div className="flex items-start gap-2.5 rounded-lg border border-line/60 bg-bg p-3 text-xs text-muted">
-            <span className="text-base leading-none">🔒</span>
-            <p className="leading-relaxed">
-              Ao clicar no botão abaixo, você será redirecionado para a página oficial do <strong>Checkout Seguro (Stripe)</strong> para preencher os dados do cartão com total proteção.
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
-          <PixMark className="size-8" />
-          <div>
-            <p className="text-sm font-semibold">Pagamento instantâneo com PIX</p>
-            <p className="text-xs text-muted">O QR e o copia e cola aparecem na próxima tela.</p>
-          </div>
-        </div>
-      )}
 
       <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label>
@@ -279,7 +223,7 @@ export function CheckoutForm({ product }: { product: Product }) {
         </span>
       </label>
       <Button type="submit" size="lg" className="cta-pulse w-full" disabled={busy}>
-        {busy ? "Processando…" : method === "pix" ? "Pagar com PIX agora" : "Pagar com cartão"}
+        {busy ? "Processando…" : "Pagar com PIX agora"}
       </Button>
       <p className="text-center text-xs text-faint">
         Após o pagamento, a entrega automática começa na hora.

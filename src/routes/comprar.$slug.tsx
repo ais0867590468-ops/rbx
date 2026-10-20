@@ -68,7 +68,7 @@ function ComprarPage() {
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted">Checkout RecargasBuxs</p>
             <h1 className="mt-2 font-display text-3xl font-semibold">Seus dados</h1>
             <p className="mt-2 text-sm text-muted">
-              Informe a conta, escolha PIX ou cartão e receba na hora após a confirmação.
+              Informe a conta, pague no PIX e receba na hora após a confirmação.
             </p>
             <div className="mt-8">
               <CheckoutForm product={product} />

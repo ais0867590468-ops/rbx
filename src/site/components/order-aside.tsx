@@ -65,8 +65,7 @@ export function OrderAside({
           </div>
           <div className="flex items-center gap-2 pt-1">
             <PixMark />
-            <CardMark />
-            <p className="text-xs text-muted">PIX e cartão</p>
+            <p className="text-xs text-muted">PIX instantâneo</p>
           </div>
         </div>
       </div>

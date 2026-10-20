@@ -40,12 +40,14 @@ import { Route as CheckoutOrderIdRouteImport } from './routes/checkout.$orderId'
 import { Route as ComprarSlugRouteImport } from './routes/comprar.$slug'
 import { Route as ProdutoSlugRouteImport } from './routes/produto.$slug'
 import { Route as TicketPublicIdRouteImport } from './routes/ticket.$publicId'
+import { Route as WebhooksVulcanopayRouteImport } from './routes/webhooks/vulcanopay'
 import { Route as AdminClienteEmailRouteImport } from './routes/admin/cliente.$email'
 import { Route as AdminTicketsIdRouteImport } from './routes/admin/tickets.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiDiscordInteractionsRouteImport } from './routes/api/discord/interactions'
 import { Route as ApiWebhookPagamentoRouteImport } from './routes/api/webhook/pagamento'
 import { Route as ApiWebhookPurincashRouteImport } from './routes/api/webhook/purincash'
+import { Route as ApiWebhookVulcanoRouteImport } from './routes/api/webhook/vulcano'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -202,6 +204,11 @@ const TicketPublicIdRoute = TicketPublicIdRouteImport.update({
   path: '/ticket/$publicId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WebhooksVulcanopayRoute = WebhooksVulcanopayRouteImport.update({
+  id: '/webhooks/vulcanopay',
+  path: '/webhooks/vulcanopay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminClienteEmailRoute = AdminClienteEmailRouteImport.update({
   id: '/cliente/$email',
   path: '/cliente/$email',
@@ -230,6 +237,11 @@ const ApiWebhookPagamentoRoute = ApiWebhookPagamentoRouteImport.update({
 const ApiWebhookPurincashRoute = ApiWebhookPurincashRouteImport.update({
   id: '/api/webhook/purincash',
   path: '/api/webhook/purincash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebhookVulcanoRoute = ApiWebhookVulcanoRouteImport.update({
+  id: '/api/webhook/vulcano',
+  path: '/api/webhook/vulcano',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -264,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/comprar/$slug': typeof ComprarSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/ticket/$publicId': typeof TicketPublicIdRoute
+  '/webhooks/vulcanopay': typeof WebhooksVulcanopayRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/cliente/$email': typeof AdminClienteEmailRoute
   '/admin/tickets/$id': typeof AdminTicketsIdRoute
@@ -271,6 +284,7 @@ export interface FileRoutesByFullPath {
   '/api/discord/interactions': typeof ApiDiscordInteractionsRoute
   '/api/webhook/pagamento': typeof ApiWebhookPagamentoRoute
   '/api/webhook/purincash': typeof ApiWebhookPurincashRoute
+  '/api/webhook/vulcano': typeof ApiWebhookVulcanoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -302,6 +316,7 @@ export interface FileRoutesByTo {
   '/comprar/$slug': typeof ComprarSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/ticket/$publicId': typeof TicketPublicIdRoute
+  '/webhooks/vulcanopay': typeof WebhooksVulcanopayRoute
   '/admin': typeof AdminIndexRoute
   '/admin/cliente/$email': typeof AdminClienteEmailRoute
   '/admin/tickets/$id': typeof AdminTicketsIdRoute
@@ -309,6 +324,7 @@ export interface FileRoutesByTo {
   '/api/discord/interactions': typeof ApiDiscordInteractionsRoute
   '/api/webhook/pagamento': typeof ApiWebhookPagamentoRoute
   '/api/webhook/purincash': typeof ApiWebhookPurincashRoute
+  '/api/webhook/vulcano': typeof ApiWebhookVulcanoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -342,6 +358,7 @@ export interface FileRoutesById {
   '/comprar/$slug': typeof ComprarSlugRoute
   '/produto/$slug': typeof ProdutoSlugRoute
   '/ticket/$publicId': typeof TicketPublicIdRoute
+  '/webhooks/vulcanopay': typeof WebhooksVulcanopayRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/cliente/$email': typeof AdminClienteEmailRoute
   '/admin/tickets/$id': typeof AdminTicketsIdRoute
@@ -349,6 +366,7 @@ export interface FileRoutesById {
   '/api/discord/interactions': typeof ApiDiscordInteractionsRoute
   '/api/webhook/pagamento': typeof ApiWebhookPagamentoRoute
   '/api/webhook/purincash': typeof ApiWebhookPurincashRoute
+  '/api/webhook/vulcano': typeof ApiWebhookVulcanoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -383,6 +401,7 @@ export interface FileRouteTypes {
     | '/comprar/$slug'
     | '/produto/$slug'
     | '/ticket/$publicId'
+    | '/webhooks/vulcanopay'
     | '/admin/'
     | '/admin/cliente/$email'
     | '/admin/tickets/$id'
@@ -390,6 +409,7 @@ export interface FileRouteTypes {
     | '/api/discord/interactions'
     | '/api/webhook/pagamento'
     | '/api/webhook/purincash'
+    | '/api/webhook/vulcano'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -421,6 +441,7 @@ export interface FileRouteTypes {
     | '/comprar/$slug'
     | '/produto/$slug'
     | '/ticket/$publicId'
+    | '/webhooks/vulcanopay'
     | '/admin'
     | '/admin/cliente/$email'
     | '/admin/tickets/$id'
@@ -428,6 +449,7 @@ export interface FileRouteTypes {
     | '/api/discord/interactions'
     | '/api/webhook/pagamento'
     | '/api/webhook/purincash'
+    | '/api/webhook/vulcano'
   id:
     | '__root__'
     | '/'
@@ -460,6 +482,7 @@ export interface FileRouteTypes {
     | '/comprar/$slug'
     | '/produto/$slug'
     | '/ticket/$publicId'
+    | '/webhooks/vulcanopay'
     | '/admin/'
     | '/admin/cliente/$email'
     | '/admin/tickets/$id'
@@ -467,6 +490,7 @@ export interface FileRouteTypes {
     | '/api/discord/interactions'
     | '/api/webhook/pagamento'
     | '/api/webhook/purincash'
+    | '/api/webhook/vulcano'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -486,10 +510,12 @@ export interface RootRouteChildren {
   ComprarSlugRoute: typeof ComprarSlugRoute
   ProdutoSlugRoute: typeof ProdutoSlugRoute
   TicketPublicIdRoute: typeof TicketPublicIdRoute
+  WebhooksVulcanopayRoute: typeof WebhooksVulcanopayRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiDiscordInteractionsRoute: typeof ApiDiscordInteractionsRoute
   ApiWebhookPagamentoRoute: typeof ApiWebhookPagamentoRoute
   ApiWebhookPurincashRoute: typeof ApiWebhookPurincashRoute
+  ApiWebhookVulcanoRoute: typeof ApiWebhookVulcanoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -711,6 +737,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TicketPublicIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/webhooks/vulcanopay': {
+      id: '/webhooks/vulcanopay'
+      path: '/webhooks/vulcanopay'
+      fullPath: '/webhooks/vulcanopay'
+      preLoaderRoute: typeof WebhooksVulcanopayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/cliente/$email': {
       id: '/admin/cliente/$email'
       path: '/cliente/$email'
@@ -751,6 +784,13 @@ declare module '@tanstack/react-router' {
       path: '/api/webhook/purincash'
       fullPath: '/api/webhook/purincash'
       preLoaderRoute: typeof ApiWebhookPurincashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhook/vulcano': {
+      id: '/api/webhook/vulcano'
+      path: '/api/webhook/vulcano'
+      fullPath: '/api/webhook/vulcano'
+      preLoaderRoute: typeof ApiWebhookVulcanoRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -825,10 +865,12 @@ const rootRouteChildren: RootRouteChildren = {
   ComprarSlugRoute: ComprarSlugRoute,
   ProdutoSlugRoute: ProdutoSlugRoute,
   TicketPublicIdRoute: TicketPublicIdRoute,
+  WebhooksVulcanopayRoute: WebhooksVulcanopayRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiDiscordInteractionsRoute: ApiDiscordInteractionsRoute,
   ApiWebhookPagamentoRoute: ApiWebhookPagamentoRoute,
   ApiWebhookPurincashRoute: ApiWebhookPurincashRoute,
+  ApiWebhookVulcanoRoute: ApiWebhookVulcanoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
