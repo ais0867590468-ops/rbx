@@ -192,11 +192,10 @@ export function SiteShell({
             </div>
           </div>
           <div className="border-t border-line">
-            <p className="mx-auto max-w-6xl px-4 py-4 text-xs text-faint">
-              © {new Date().getFullYear()} RecargasBuxs. Pagamentos protegidos. Entrega automática.
-              Roblox e Robux são marcas de seus respectivos donos. Não somos afiliados à Roblox
-              Corporation.
-            </p>
+            <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-4 text-center text-xs text-faint sm:flex-row sm:text-left">
+              <p>© 2021-2026 RecargaBux - Todos os direitos reservados</p>
+              <p>CNPJ: 37.678.546/0001-06</p>
+            </div>
           </div>
         </footer>
       )}
