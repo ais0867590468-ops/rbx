@@ -29,26 +29,47 @@ export function PandaVideo({ className = "" }: { className?: string }) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   }
 
-  function togglePlay() {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused || videoRef.current.ended) {
-      videoRef.current.play().then(() => {
-        setIsPlaying(true);
-        setHasStarted(true);
-      }).catch(() => {});
+  function handlePlayClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused || video.ended) {
+      video
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setHasStarted(true);
+        })
+        .catch(() => {
+          // If browser blocks unmuted audio on first interaction, mute and play
+          video.muted = true;
+          setIsMuted(true);
+          video
+            .play()
+            .then(() => {
+              setIsPlaying(true);
+              setHasStarted(true);
+            })
+            .catch(() => {});
+        });
     } else {
-      videoRef.current.pause();
+      video.pause();
       setIsPlaying(false);
     }
   }
 
-  function toggleMute() {
-    if (!videoRef.current) return;
-    videoRef.current.muted = !videoRef.current.muted;
-    setIsMuted(videoRef.current.muted);
+  function toggleMute(e: React.MouseEvent) {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
   }
 
-  function toggleFullscreen() {
+  function toggleFullscreen(e: React.MouseEvent) {
+    e.stopPropagation();
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
@@ -58,10 +79,12 @@ export function PandaVideo({ className = "" }: { className?: string }) {
   }
 
   function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
-    if (!videoRef.current || !duration) return;
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video || !duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    videoRef.current.currentTime = pos * duration;
+    video.currentTime = pos * duration;
     setCurrentTime(pos * duration);
   }
 
@@ -76,11 +99,70 @@ export function PandaVideo({ className = "" }: { className?: string }) {
   }
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleMetadata = () => {
+      if (video.duration && !isNaN(video.duration)) {
+        setDuration(video.duration);
+      }
+      // Decode and display first frame immediately
+      if (video.currentTime === 0) {
+        try {
+          video.currentTime = 0.05;
+        } catch {}
+      }
+    };
+
+    const handleDuration = () => {
+      if (video.duration && !isNaN(video.duration)) {
+        setDuration(video.duration);
+      }
+    };
+
+    const handleTime = () => {
+      setCurrentTime(video.currentTime || 0);
+    };
+
+    const handleOnPlay = () => {
+      setIsPlaying(true);
+      setHasStarted(true);
+    };
+
+    const handleOnPause = () => {
+      setIsPlaying(false);
+    };
+
+    const handleOnEnded = () => {
+      setIsPlaying(false);
+      setShowControls(true);
+    };
+
+    video.addEventListener("loadedmetadata", handleMetadata);
+    video.addEventListener("durationchange", handleDuration);
+    video.addEventListener("canplay", handleDuration);
+    video.addEventListener("timeupdate", handleTime);
+    video.addEventListener("play", handleOnPlay);
+    video.addEventListener("pause", handleOnPause);
+    video.addEventListener("ended", handleOnEnded);
+
+    if (video.readyState >= 1) {
+      handleMetadata();
+    }
+
     function onFullscreenChange() {
       setIsFullscreen(Boolean(document.fullscreenElement));
     }
     document.addEventListener("fullscreenchange", onFullscreenChange);
+
     return () => {
+      video.removeEventListener("loadedmetadata", handleMetadata);
+      video.removeEventListener("durationchange", handleDuration);
+      video.removeEventListener("canplay", handleDuration);
+      video.removeEventListener("timeupdate", handleTime);
+      video.removeEventListener("play", handleOnPlay);
+      video.removeEventListener("pause", handleOnPause);
+      video.removeEventListener("ended", handleOnEnded);
       document.removeEventListener("fullscreenchange", onFullscreenChange);
       if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     };
@@ -93,38 +175,28 @@ export function PandaVideo({ className = "" }: { className?: string }) {
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && setShowControls(false)}
-      className={`group relative mx-auto w-full max-w-[340px] select-none overflow-hidden rounded-2xl border border-line/80 bg-black shadow-2xl transition-all ${className}`}
+      className={`group relative mx-auto w-full max-w-[340px] select-none overflow-hidden rounded-2xl border border-line/80 bg-neutral-950 shadow-2xl transition-all ${className}`}
     >
-      <div className="relative aspect-[9/16] w-full overflow-hidden bg-black">
+      <div className="relative aspect-[9/16] w-full overflow-hidden bg-neutral-950">
         <video
           ref={videoRef}
-          src="/videos/tutorial.mp4"
+          src="/videos/tutorial.mp4#t=0.05"
           playsInline
-          preload="metadata"
-          onClick={togglePlay}
-          onTimeUpdate={() => videoRef.current && setCurrentTime(videoRef.current.currentTime)}
-          onLoadedMetadata={() => videoRef.current && setDuration(videoRef.current.duration)}
-          onEnded={() => {
-            setIsPlaying(false);
-            setShowControls(true);
-          }}
+          preload="auto"
+          onClick={handlePlayClick}
           className="size-full cursor-pointer object-cover"
         />
 
         {/* Center Big Panda Play Button */}
         {(!isPlaying || !hasStarted) && (
           <div
-            onClick={togglePlay}
-            className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-black/25 backdrop-blur-[1px] transition-all duration-300"
+            onClick={handlePlayClick}
+            className="absolute inset-0 z-20 flex cursor-pointer items-center justify-center bg-black/20 backdrop-blur-[1px] transition-all duration-300"
           >
-            <button
-              type="button"
-              aria-label="Reproduzir vídeo"
-              className="group/btn relative flex size-20 items-center justify-center rounded-full bg-[#f97316] text-white shadow-[0_0_35px_rgba(249,115,22,0.6)] transition-all duration-300 hover:scale-110 hover:bg-[#ea580c] hover:shadow-[0_0_45px_rgba(249,115,22,0.85)] active:scale-95 sm:size-24"
-            >
-              <div className="absolute inset-0 animate-ping rounded-full bg-[#f97316]/30 opacity-75" />
-              <Play className="relative ml-1.5 size-9 fill-white sm:size-11" />
-            </button>
+            <div className="relative flex size-20 items-center justify-center rounded-full bg-[#f97316] text-white shadow-[0_0_35px_rgba(249,115,22,0.65)] transition-all duration-300 hover:scale-110 hover:bg-[#ea580c] hover:shadow-[0_0_45px_rgba(249,115,22,0.9)] active:scale-95 sm:size-24">
+              <div className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-[#f97316]/30 opacity-75" />
+              <Play className="pointer-events-none relative ml-1.5 size-9 fill-white sm:size-11" />
+            </div>
           </div>
         )}
 
@@ -152,7 +224,7 @@ export function PandaVideo({ className = "" }: { className?: string }) {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={togglePlay}
+                onClick={handlePlayClick}
                 className="rounded-full p-1.5 transition-colors hover:bg-white/20"
                 aria-label={isPlaying ? "Pausar" : "Reproduzir"}
               >
@@ -183,10 +255,12 @@ export function PandaVideo({ className = "" }: { className?: string }) {
               {currentTime >= duration && duration > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (videoRef.current) {
-                      videoRef.current.currentTime = 0;
-                      videoRef.current.play();
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const video = videoRef.current;
+                    if (video) {
+                      video.currentTime = 0;
+                      video.play();
                       setIsPlaying(true);
                     }
                   }}
