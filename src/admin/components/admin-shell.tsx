@@ -72,8 +72,11 @@ export function AdminShell() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const isSignup = auth.needsSetup || isRegistering;
 
   async function checkAuth() {
     try {
@@ -103,7 +106,7 @@ export function AdminShell() {
     setSubmitting(true);
     setErrorMsg(null);
     try {
-      if (auth.needsSetup) {
+      if (isSignup) {
         await registerFirstStaff({
           data: {
             name: name || undefined,
@@ -166,14 +169,14 @@ export function AdminShell() {
               <Shield className="size-6" />
             </div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
-              {auth.needsSetup ? "Primeiro Acesso — Configuração" : "Área Restrita"}
+              {isSignup ? "Cadastro de Administrador" : "Área Restrita"}
             </p>
             <h1 className="mt-1 font-display text-2xl font-bold text-fg">
-              {auth.needsSetup ? "Criar Conta de Dono" : "Acesso ao Painel ADM"}
+              {isSignup ? "Criar Conta de Administrador" : "Acesso ao Painel ADM"}
             </h1>
             <p className="mt-2 text-xs text-muted">
-              {auth.needsSetup
-                ? "Nenhum administrador cadastrado ainda. Defina os dados do primeiro dono da loja."
+              {isSignup
+                ? "Defina seu nome, e-mail e senha para criar o acesso de administrador da loja."
                 : "Digite seu e-mail e senha de equipe para acessar o painel de gerenciamento."}
             </p>
           </div>
@@ -185,7 +188,7 @@ export function AdminShell() {
           )}
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
-            {auth.needsSetup && (
+            {isSignup && (
               <div>
                 <Label htmlFor="admin-name" className="text-xs text-muted">
                   Nome do Administrador
@@ -231,7 +234,7 @@ export function AdminShell() {
                   id="admin-password"
                   type="password"
                   required
-                  placeholder={auth.needsSetup ? "Mínimo 6 caracteres" : "••••••••"}
+                  placeholder={isSignup ? "Mínimo 6 caracteres" : "••••••••"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9 text-sm"
@@ -249,12 +252,25 @@ export function AdminShell() {
                   <Loader2 className="size-4 animate-spin" />
                   Processando...
                 </>
-              ) : auth.needsSetup ? (
+              ) : isSignup ? (
                 "Criar Administrador e Entrar"
               ) : (
                 "Entrar no Painel"
               )}
             </Button>
+
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegistering(!isRegistering);
+                  setErrorMsg(null);
+                }}
+                className="text-xs text-accent underline hover:opacity-80"
+              >
+                {isSignup ? "Já tem uma conta? Fazer login" : "Não tem conta? Criar administrador"}
+              </button>
+            </div>
           </form>
 
           <div className="mt-6 border-t border-line/60 pt-4 text-center">

@@ -26,6 +26,40 @@ export const getStaffAuthStatus = createServerFn({ method: "GET" }).handler(asyn
       created_at timestamptz not null default now()
     )
   `;
+  await sql`
+    create table if not exists staff (
+      user_id text primary key,
+      role text not null default 'admin',
+      email text,
+      name text,
+      created_at timestamptz not null default now()
+    )
+  `;
+
+  const envEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const envPassword = process.env.ADMIN_PASSWORD?.trim();
+  if (envEmail && envPassword && envPassword.length >= 6) {
+    const existing = await sql<{ id: string }>`select id from staff_users where lower(email) = ${envEmail} limit 1`;
+    const pwHash = hashPassword(envPassword);
+    if (existing.length === 0) {
+      const id = newStaffId();
+      await sql`
+        insert into staff_users (id, email, name, password_hash, role)
+        values (${id}, ${envEmail}, 'Admin', ${pwHash}, 'owner')
+        on conflict (email) do update set password_hash = ${pwHash}
+      `;
+      await sql`
+        insert into staff (user_id, role, email, name)
+        values (${id}, 'owner', ${envEmail}, 'Admin')
+        on conflict (user_id) do update set email = ${envEmail}
+      `;
+    } else {
+      await sql`
+        update staff_users set password_hash = ${pwHash} where lower(email) = ${envEmail}
+      `;
+    }
+  }
+
   const countRow = await sql<{ n: number }>`select count(*)::int as n from staff_users`;
   const count = countRow[0]?.n ?? 0;
 
