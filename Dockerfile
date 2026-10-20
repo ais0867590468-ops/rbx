@@ -14,6 +14,7 @@ ENV NITRO_HOST=0.0.0.0
 ENV NITRO_PORT=8080
 
 RUN npm run build:admin
+RUN node scripts/copy-pglite-assets.mjs
 
 EXPOSE 8080
 
