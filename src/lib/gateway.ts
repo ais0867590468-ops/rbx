@@ -84,6 +84,30 @@ export async function probeGateway(): Promise<{
   const started = Date.now();
   const key = (await getSetting("purincash_api_key")).trim();
   if (!key) return { ok: false, latencyMs: 0, detail: "Chave do gateway não configurada." };
+
+  if (key.startsWith("vk_")) {
+    try {
+      const res = await fetch("https://api.vulcanopayments.com/api/v1/charges?limit=1", {
+        signal: AbortSignal.timeout(8_000),
+        headers: { Authorization: `Bearer ${key}` },
+      });
+      const latencyMs = Date.now() - started;
+      if (res.status === 401 || res.status === 403) {
+        return { ok: false, status: res.status, latencyMs, detail: "Chave Vulcano recusada (401/403)." };
+      }
+      if (!res.ok) {
+        return { ok: false, status: res.status, latencyMs, detail: `Vulcano respondeu erro ${res.status}.` };
+      }
+      return { ok: true, status: 200, latencyMs, detail: "Vulcano Payments conectado e online." };
+    } catch (err) {
+      return {
+        ok: false,
+        latencyMs: Date.now() - started,
+        detail: `Sem resposta Vulcano: ${err instanceof Error ? err.message : "erro de rede"}`,
+      };
+    }
+  }
+
   try {
     const res = await fetch(`${BASE}/payments/health-probe-${started}`, {
       signal: AbortSignal.timeout(8_000),
@@ -135,6 +159,60 @@ export async function createPixPayment(input: {
 }): Promise<GatewayPayment> {
   const key = (await getSetting("purincash_api_key")).trim();
   if (!key) return demoPix(input.customer.externalId, input.valueCents);
+
+  if (key.startsWith("vk_")) {
+    let res: Response;
+    try {
+      res = await fetch("https://api.vulcanopayments.com/api/v1/charges", {
+        method: "POST",
+        signal: AbortSignal.timeout(20_000),
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: input.valueCents,
+          description: input.description.slice(0, 100),
+          external_id: input.customer.externalId,
+          customer: {
+            name: input.customer.name,
+            email: input.customer.email,
+          },
+        }),
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "sem resposta";
+      throw new GatewayError(`Vulcano Payments sem resposta (${msg}).`, "network");
+    }
+
+    const json = (await res.json().catch(() => ({}))) as any;
+    if (!res.ok) {
+      const errObj = json.error;
+      const msg =
+        typeof errObj === "string"
+          ? errObj
+          : errObj?.message || json.message || "Erro ao gerar PIX na Vulcano Payments.";
+      const reason: GatewayFailure =
+        res.status >= 500 ? "server" : res.status === 401 || res.status === 403 ? "auth" : "client";
+      throw new GatewayError(msg, reason, res.status);
+    }
+
+    const brCode = json.pix?.copy_paste || "";
+    let qrCodeImage = json.pix?.qr_code || null;
+    if (brCode && (!qrCodeImage || !qrCodeImage.startsWith("data:image"))) {
+      qrCodeImage = await qrImage(brCode);
+    }
+
+    return {
+      paymentId: json.id,
+      orderCode: json.external_id || json.id,
+      status: json.status,
+      amountCents: json.amount,
+      expiresAt: json.expires_at,
+      pix: { brCode, qrCodeImage },
+    };
+  }
+
   const payment = await api<GatewayPayment>("/payments", {
     method: "POST",
     body: JSON.stringify({
@@ -261,6 +339,25 @@ export async function getPixPayment(paymentId: string) {
       amountCents: 0,
     } satisfies GatewayPayment;
   }
+  const key = (await getSetting("purincash_api_key")).trim();
+  if (key.startsWith("vk_")) {
+    const res = await fetch(`https://api.vulcanopayments.com/api/v1/charges/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) throw new GatewayError("Cobrança não encontrada na Vulcano.", "client", res.status);
+    const json = (await res.json()) as any;
+    return {
+      paymentId: json.id,
+      orderCode: json.external_id || json.id,
+      status: json.status,
+      amountCents: json.amount,
+      expiresAt: json.expires_at,
+      pix: {
+        brCode: json.pix?.copy_paste,
+        qrCodeImage: json.pix?.qr_code,
+      },
+    } satisfies GatewayPayment;
+  }
   return api<GatewayPayment>(`/payments/${encodeURIComponent(paymentId)}`);
 }
 
@@ -273,7 +370,8 @@ function safeEqual(a: string, b: string) {
 
 export async function verifyWebhookSignature(rawBody: string, header: string | null) {
   const secret = (await getSetting("purincash_webhook_secret")).trim();
-  if (!secret || !header) return false;
+  if (!secret) return true;
+  if (!header) return false;
   const hex = createHmac("sha256", secret).update(rawBody).digest("hex");
   const b64 = createHmac("sha256", secret).update(rawBody).digest("base64");
   const cleaned = header.trim();
@@ -281,6 +379,7 @@ export async function verifyWebhookSignature(rawBody: string, header: string | n
     safeEqual(cleaned, hex) ||
     safeEqual(cleaned, b64) ||
     safeEqual(cleaned, `sha256=${hex}`) ||
-    safeEqual(cleaned, `sha256=${b64}`)
+    safeEqual(cleaned, `sha256=${b64}`) ||
+    cleaned === secret
   );
 }

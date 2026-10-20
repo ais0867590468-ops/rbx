@@ -17,7 +17,10 @@ export async function handlePaymentWebhook(request: Request) {
   if (raw.length > MAX_BODY) return Response.json({ error: "payload too large" }, { status: 413 });
   const sig =
     request.headers.get("x-webhook-signature") ||
-    request.headers.get("X-Webhook-Signature");
+    request.headers.get("X-Webhook-Signature") ||
+    request.headers.get("x-signature") ||
+    request.headers.get("signature") ||
+    request.headers.get("x-vulcano-signature");
   const ok = await verifyWebhookSignature(raw, sig);
   if (!ok) {
     const sql = await getSql();
@@ -35,42 +38,60 @@ export async function handlePaymentWebhook(request: Request) {
     });
     return Response.json({ error: "invalid signature" }, { status: 401 });
   }
-  let payload: {
-    event?: string;
-    paymentId?: string;
-    orderCode?: string;
-    status?: string;
-    amount?: number;
-    amountCents?: number;
-    payer?: string;
-    cpf?: string;
-    bank?: string;
-    endToEndId?: string;
-  };
+  let payload: Record<string, any>;
   try {
-    payload = JSON.parse(raw) as typeof payload;
+    payload = JSON.parse(raw);
   } catch {
     return Response.json({ error: "invalid json" }, { status: 400 });
   }
-  const event = payload.event ?? "";
-  const paymentIdentifier = payload.paymentId || payload.orderCode;
+  const event = String(payload.event ?? "");
+  const status = String(payload.status ?? "").toLowerCase();
+  const paymentIdentifier =
+    payload.external_id ||
+    payload.paymentId ||
+    payload.orderCode ||
+    payload.id ||
+    payload.data?.id ||
+    payload.data?.external_id;
+
   if (!paymentIdentifier) return Response.json({ ok: true });
-  if (event && !event.includes("paid") && payload.status !== "paid" && payload.status !== "approved") {
+
+  const isPaid =
+    status === "paid" ||
+    status === "approved" ||
+    status === "completed" ||
+    event.includes("paid") ||
+    event.includes("approved") ||
+    event === "charge.paid";
+
+  if (!isPaid && event) {
     return Response.json({ ok: true });
   }
-  const order = await getOrderByPayment(paymentIdentifier);
+
+  const order = await getOrderByPayment(String(paymentIdentifier));
   if (order) {
     const sql = await getSql();
     await sql`
       insert into event_logs (kind, ip, user_agent, path, detail)
       values ('webhook', ${ip}, ${userAgent}, '/api/webhook/pagamento',
-        ${JSON.stringify({ orderId: order.id, event, status: payload.status ?? null })})
+        ${JSON.stringify({ orderId: order.id, event, status })})
     `;
+    const payerName =
+      typeof payload.payer === "string"
+        ? payload.payer
+        : payload.payer?.name || payload.customer?.name || null;
+    const payerCpf =
+      typeof payload.cpf === "string"
+        ? payload.cpf
+        : payload.payer?.document || payload.customer?.document || null;
+    const payerBank = payload.bank || payload.pix?.bank || null;
+    const endToEndId = payload.endToEndId || payload.end_to_end_id || payload.pix?.end_to_end_id || null;
+
     await markOrderPaid(order, {
-      payer_name: payload.payer,
-      payer_cpf: payload.cpf,
-      payer_bank: payload.bank,
-      end_to_end_id: payload.endToEndId,
+      payer_name: payerName,
+      payer_cpf: payerCpf,
+      payer_bank: payerBank,
+      end_to_end_id: endToEndId,
     });
   }
   return Response.json({ ok: true });

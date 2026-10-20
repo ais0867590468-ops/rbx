@@ -45,7 +45,7 @@ export async function getOrder(id: string) {
 export async function getOrderByPayment(paymentId: string) {
   const sql = await getSql();
   const rows = await sql<OrderRow>`
-    select * from orders where payment_id = ${paymentId} limit 1
+    select * from orders where payment_id = ${paymentId} or id = ${paymentId} limit 1
   `;
   return rows[0] ?? null;
 }

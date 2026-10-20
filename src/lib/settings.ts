@@ -66,8 +66,8 @@ const FALLBACKS: Record<SettingKey, string> = {
 
 /** Env vars that override the DB value (never shown in the panel, never in source). */
 const ENV_OVERRIDE: Partial<Record<SettingKey, string[]>> = {
-  purincash_api_key: ["PURINCASH_API_KEY", "GATEWAY_API_KEY"],
-  purincash_webhook_secret: ["PURINCASH_WEBHOOK_SECRET", "GATEWAY_WEBHOOK_SECRET"],
+  purincash_api_key: ["PURINCASH_API_KEY", "GATEWAY_API_KEY", "VULCANO_API_KEY"],
+  purincash_webhook_secret: ["PURINCASH_WEBHOOK_SECRET", "GATEWAY_WEBHOOK_SECRET", "VULCANO_WEBHOOK_SECRET"],
   discord_bot_token: ["DISCORD_BOT_TOKEN"],
   discord_public_key: ["DISCORD_PUBLIC_KEY"],
   utmify_api_token: ["UTMIFY_API_TOKEN"],
