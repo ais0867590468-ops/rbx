@@ -1,0 +1,29 @@
+# dependências e saídas de build (geradas no deploy)
+node_modules/
+dist/
+.output/
+.vercel/
+.netlify/
+.vite/
+*.tsbuildinfo
+
+# segredos: chaves vão nas variáveis de ambiente do Vercel/Railway, nunca no código
+.env
+.env.*
+!.env.example
+
+# lixo local
+*.log
+.DS_Store
+Thumbs.db
+screenshots/*.png
+screenshots/*.json
+attachments/
+.tanstack/
+*.zip
+.grok/status
+.grok/preview.*
+.grok/og-pending
+
+.node_modules.lock
+

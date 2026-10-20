@@ -1,0 +1,9 @@
+# Loja publica (Netlify). O painel ADM NAO vai aqui: ele sobe separado no Railway.
+[build]
+  command = "npm run build:store"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  APP_MODE = "store"
+  NITRO_PRESET = "netlify"

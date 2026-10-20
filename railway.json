@@ -1,0 +1,13 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm install && npm run build:admin"
+  },
+  "deploy": {
+    "startCommand": "npm run start:admin",
+    "restartPolicyType": "ALWAYS",
+    "healthcheckPath": "/login",
+    "healthcheckTimeout": 60
+  }
+}
